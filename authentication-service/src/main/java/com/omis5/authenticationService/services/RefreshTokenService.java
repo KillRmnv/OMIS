@@ -33,7 +33,7 @@ public class RefreshTokenService {
     private RefreshToken getRefreshToken(RefreshToken refreshToken, AuthenticationUser user) {
         refreshToken.setUser(user);
         refreshToken.setToken(jwtTokenGenerator.generateToken(user.getUsername(),user.getPassword(),
-                user.getRole().toString()));
+                user.getUserRole().toString()));
         refreshToken.setExpiresAt(LocalDateTime.now().plusSeconds(expirationTime));
         refreshTokenRepository.deleteByUserId(user.getId());
         refreshTokenRepository.save(refreshToken);

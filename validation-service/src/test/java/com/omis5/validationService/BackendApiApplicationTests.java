@@ -1,5 +1,6 @@
-package com.omis5.distributionService;
+package com.omis5.validationService;
 
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest

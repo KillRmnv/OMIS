@@ -5,9 +5,16 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.omis5</groupId>
+    <parent>
+        <groupId>com.omis5</groupId>
+        <artifactId>omis-monorepo</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
     <artifactId>common-llm</artifactId>
-    <version>1.0.0</version>
+    <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
+
+
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>

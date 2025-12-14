@@ -39,6 +39,11 @@
                     <type>pom</type>
                     <scope>import</scope>
                 </dependency>
+                <dependency>
+                    <groupId>com.omis5</groupId>
+                    <artifactId>common-llm</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
             </dependencies>
 
 

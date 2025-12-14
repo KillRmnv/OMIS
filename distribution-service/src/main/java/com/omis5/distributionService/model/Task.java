@@ -3,7 +3,7 @@ import java.util.List;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import org.springframework.beans.factory.annotation.Value;
+
 @Table(name = "tasks")
 @Data
 @Entity

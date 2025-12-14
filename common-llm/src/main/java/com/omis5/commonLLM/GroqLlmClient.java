@@ -20,9 +20,9 @@ public class GroqLlmClient implements LlmInterface {
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public GroqLlmClient(String apiUrl, String apiKey) {
-        this.apiUrl = apiUrl;
-        this.apiKey = apiKey;
+    public GroqLlmClient() {
+        this.apiUrl = EnvConfig.get("GROQ_API_URL");
+        this.apiKey = EnvConfig.get("GROQ_API_KEY");
     }
 
     @Override

@@ -11,7 +11,7 @@
 	</parent>
 
 	<groupId>com.omis5</groupId>
-	<artifactId>valudation-service</artifactId>
+	<artifactId>validation-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>omis6-validation</name>
 	<description>project for omis lw 6</description>
