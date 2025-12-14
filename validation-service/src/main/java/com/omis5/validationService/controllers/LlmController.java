@@ -1,135 +1,148 @@
 package com.omis5.validationService.controllers;
 
-import com.omis5.commonLLM.LlmInterface;
+import com.omis5.commonLLM.providers.Providers;
+import com.omis5.commonTemplate.model.DocumentationTemplate;
+import com.omis5.validationService.dto.ErrorResponse;
+import com.omis5.validationService.dto.ValidationRequest;
+import com.omis5.validationService.dto.ValidationResponse;
 import com.omis5.validationService.services.LlmService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.multipart.MultipartFile;
 
-
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/llm")
-@Slf4j  // <-- добавь это
+@RequestMapping("/api/validation")
+@Slf4j
 public class LlmController {
-    private LlmService llmService;
-    private final LlmInterface llmClient;
-    @Value("${llm.groq.api-key}")
-    String key;
-
-    private final RestTemplate restTemplate = new RestTemplate();
+    
+    private final LlmService llmService;
 
     @Autowired
-    public LlmController(LlmInterface llmClient,LlmService llmService) {
-        this.llmClient = llmClient;
+    public LlmController(LlmService llmService) {
         this.llmService = llmService;
     }
 
-    private static final String SYSTEM_PROMPT = """
-            Ты — интеллектуальный ассистент медицинского приложения.
-            Отвечай кратко, точно и профессионально.
-            Если вопрос не относится к медицине или диагностике — отвечай нейтрально или откажись.
-            Никогда не выдавай непроверенные диагнозы.Отвечай на языке запроса пользователя.Будет прикреплена медицинская
-            карта пользователя с историей болезней, которые ты ранее диагностировал.Также будет прикреплено описание состояние 
-            кожи,глаз,эмоционального состояния и т.д.
-            """;
-    private static final String PROMPT_TO_EDIT_CARD = """
-    ТЫ — СИСТЕМА ОБНОВЛЕНИЯ МЕДИЦИНСКОЙ КАРТЫ. НЕ РАЗМЫШЛЯЙ. НЕ АНАЛИЗИРУЙ. НЕ ОБЪЯСНЯЙ.
-    
-    ЗАПРЕЩЕНО:
-    - Писать <think>, </think>
-    - Делать анализ, выводы, рассуждения
-    - Добавлять "я думаю", "на основании", "возможно"
-    - Использовать \n\n, лишние пробелы, переносы
-    - Изменять формат
-    - Добавлять что-либо до или после "Ответ:"
-    
-    РАЗРЕШЕНО ТОЛЬКО:
-    СТРОГО ОДНА СТРОКА НА КАЖДОЕ ЗАБОЛЕВАНИЕ:
-    Заболевание: вероятность;Описание.\n
-    
-    ПРАВИЛА:
-    1. Вероятность — ЧИСЛО 0–100, ТОЛЬКО если УКАЗАНО ЯВНО в отчёте
-    2. Если вероятность НЕ указана — ПРОПУСТИ запись
-    3. Описание — КРАТКОЕ, ТОЛЬКО симптомы из отчёта
-    4. Если заболевание НЕ упомянуто — НЕ ДОБАВЛЯЙ
-    5. Если карта пустая — создавай ТОЛЬКО с явной вероятностью
-    6. НИКАКИХ 100%, если не сказано "определённо"
-    
-    ФОРМАТ — СТРОГО:
-    Ответ:
-    Заболевание: 70;Жирная кожа, блеск.\n
-    Заболевание: 95;Сухость, жажда.\n
-    
-    НАЧИНАЙ СРАЗУ С "Ответ:"
-    ЕСЛИ НАРУШИШЬ — ТЫ БУДЕШЬ УДАЛЁН ИЗ СИСТЕМЫ.
-    """;
-
     /**
-     * Простой текстовый запрос.
-     * POST /api/llm/chat
+     * Валидирует документацию на соответствие шаблону и стандартам оформления
+     * 
+     * POST /api/validation/validate
      * {
-     * "model": "llama-3.3-70b-versatile",
-     * "prompt": "Объясни простыми словами, что такое диабет 2 типа"
+     *   "documentation": "текст документации",
+     *   "template": {
+     *     "name": "название шаблона",
+     *     "type": "MARKDOWN",
+     *     "content": "содержимое шаблона"
+     *   },
+     *   "additionalStandards": "дополнительные стандарты (опционально)",
+     *   "model": "llama-3.3-70b-versatile",
+     *   "provider": "GROQ"
      * }
      */
-    @PostMapping("/chat")
-    public ResponseEntity<?> sendChat(@RequestBody Map<String, String> requestBody) {
-        log.info("=== LLM CHAT REQUEST START ===");
-        log.info("Request body: {}", requestBody);
-
+    @PostMapping("/validate")
+    public ResponseEntity<ValidationResponse> validateDocumentation(@RequestBody Map<String, Object> requestBody) {
+        log.info("=== DOCUMENTATION VALIDATION REQUEST START ===");
+        log.debug("Request body keys: {}", requestBody.keySet());
+        
         try {
-            String modelName = requestBody.getOrDefault("model", "llama-3.3-70b-versatile");
-            Integer userId = Integer.parseInt(requestBody.getOrDefault("userId", "-1"));
-
-            if (userId == -1) {
-                log.warn("userId is missing or invalid");
-                return ResponseEntity.badRequest().body(Map.of("error", "userId is required"));
+            // Парсим запрос
+            ValidationRequest request = parseValidationRequest(requestBody);
+            log.debug("Parsed ValidationRequest with template: {}", 
+                    request.getTemplate() != null ? request.getTemplate().getName() : "null");
+            log.debug("Documentation length: {} characters", 
+                    request.getDocumentation() != null ? request.getDocumentation().length() : 0);
+            
+            // Получаем параметры модели
+            String modelName = (String) requestBody.getOrDefault("model", "llama-3.3-70b-versatile");
+            String providerStr = (String) requestBody.getOrDefault("provider", "GROQ");
+            Providers provider;
+            try {
+                provider = Providers.valueOf(providerStr.toUpperCase());
+                log.debug("Using provider: {}", provider);
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid provider: {}. Using GROQ", providerStr);
+                provider = Providers.GROQ;
             }
-
-
-
-
-            String prompt = requestBody.get("prompt");
-            if (prompt == null || prompt.isEmpty()) {
-                log.warn("Prompt is missing");
-                return ResponseEntity.badRequest().body(Map.of("error", "Missing 'prompt' field"));
-            }
-
-            log.info("Sending to LLM: model={}, prompt='{}'", modelName, prompt);
-
-            List<Map<String, String>> messages = List.of(
-                    Map.of("role", "system", "content", SYSTEM_PROMPT),
-                    Map.of("role", "user", "content", prompt)
-            );
-
-            String response = llmClient.sendChatCompletion(modelName, messages, Map.of());
-            log.info("LLM raw response: {}", response);
-
-            // Второй вызов для обновления карты
-            modelName = "qwen/qwen3-32b";
-            List<Map<String, String>> updateMessages = List.of(
-                    Map.of("role", "system", "content", PROMPT_TO_EDIT_CARD),
-                    Map.of("role", "user", "content", response)
-            );
-
-
-            log.info("=== LLM CHAT REQUEST SUCCESS ===");
-            return ResponseEntity.ok(Map.of("response", response));
-
+            
+            // Валидируем документацию
+            log.info("Starting documentation validation with model: {}, provider: {}", modelName, provider);
+            ValidationResponse validationResponse = llmService.validateDocumentation(request, modelName, provider);
+            log.debug("Validation completed. isValid: {}, issues count: {}", 
+                    validationResponse.isValid(), 
+                    validationResponse.getIssues() != null ? validationResponse.getIssues().size() : 0);
+            
+            log.info("=== DOCUMENTATION VALIDATION REQUEST SUCCESS ===");
+            return ResponseEntity.ok(validationResponse);
+            
         } catch (Exception e) {
-            log.error("Error in /chat: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+            log.error("=== DOCUMENTATION VALIDATION REQUEST FAILED ===");
+            log.error("Error in /validate: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to validate documentation: " + e.getMessage(), e);
         }
     }
-
-
+    
+    /**
+     * Обработчик исключений для возврата ErrorResponse
+     */
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException e) {
+        log.error("RuntimeException caught: {}", e.getMessage(), e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(new ErrorResponse(e.getMessage()));
+    }
+    
+    /**
+     * Парсит запрос в ValidationRequest
+     */
+    private ValidationRequest parseValidationRequest(Map<String, Object> requestBody) {
+        log.debug("Parsing validation request");
+        ValidationRequest request = new ValidationRequest();
+        
+        // Парсим документацию
+        String documentation = (String) requestBody.get("documentation");
+        if (documentation == null || documentation.isEmpty()) {
+            log.warn("Documentation is missing or empty in request");
+            throw new IllegalArgumentException("Documentation is required");
+        }
+        request.setDocumentation(documentation);
+        log.debug("Documentation parsed, length: {} characters", documentation.length());
+        
+        // Парсим шаблон
+        Map<String, Object> templateMap = (Map<String, Object>) requestBody.get("template");
+        if (templateMap == null) {
+            log.warn("Template is missing in request");
+            throw new IllegalArgumentException("Template is required");
+        }
+        
+        DocumentationTemplate template = new DocumentationTemplate();
+        template.setName((String) templateMap.get("name"));
+        template.setDescription((String) templateMap.get("description"));
+        if (templateMap.get("type") != null) {
+            try {
+                template.setType(DocumentationTemplate.TemplateType.valueOf(
+                    ((String) templateMap.get("type")).toUpperCase()
+                ));
+            } catch (Exception e) {
+                log.warn("Invalid template type, using MARKDOWN as default");
+                template.setType(DocumentationTemplate.TemplateType.MARKDOWN);
+            }
+        }
+        template.setContent((String) templateMap.get("content"));
+        request.setTemplate(template);
+        log.debug("Template parsed: name={}, type={}", template.getName(), template.getType());
+        
+        // Парсим дополнительные стандарты (опционально)
+        String additionalStandards = (String) requestBody.get("additionalStandards");
+        request.setAdditionalStandards(additionalStandards);
+        if (additionalStandards != null) {
+            log.debug("Additional standards provided, length: {} characters", additionalStandards.length());
+        }
+        
+        log.debug("Validation request parsed successfully");
+        return request;
+    }
 }
