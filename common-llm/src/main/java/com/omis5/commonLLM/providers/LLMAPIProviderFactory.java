@@ -1,7 +1,7 @@
 package com.omis5.commonLLM.providers;
 
-public class LLMProviderFactory {
-    public LLMProvider getProvider(Providers providerName) {
+public class LLMAPIProviderFactory {
+    public LLMAPIProvider getProvider(Providers providerName) {
         switch (providerName) {
             case GROQ:
                 return new GroqLLMProvider();

@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/doc-generation-service/doc-generation-service.iml" filepath="$PROJECT_DIR$/doc-generation-service/doc-generation-service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/file-storage-service/file-storage-service.iml" filepath="$PROJECT_DIR$/file-storage-service/file-storage-service.iml" />
     </modules>
   </component>
 </project>

@@ -45,7 +45,7 @@ public class GroqLlmClient implements LlmInterface {
         log.debug("JSON request body = {}", json);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(apiUrl))
+                .uri(URI.create(apiUrl+"/chat/completions"))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + apiKey)
                 .POST(HttpRequest.BodyPublishers.ofString(json))

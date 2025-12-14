@@ -51,7 +51,10 @@
 			<groupId>com.omis5</groupId>
 			<artifactId>common-llm</artifactId>
 		</dependency>
-
+		<dependency>
+			<groupId>com.omis5</groupId>
+			<artifactId>common-template</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>

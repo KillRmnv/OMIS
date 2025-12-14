@@ -4,7 +4,5 @@ import java.util.Map;
 
 public interface LLMProvider {
     Map<String,String> getAvailableModels();
-    String getApiKey();
-    String getApiUrl();
 
 }

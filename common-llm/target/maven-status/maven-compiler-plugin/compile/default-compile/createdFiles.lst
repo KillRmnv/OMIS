@@ -3,8 +3,12 @@ com/omis5/commonLLM/providers/LLMProvider.class
 com/omis5/commonLLM/LlmInterface.class
 com/omis5/commonLLM/EnvConfig.class
 com/omis5/commonLLM/providers/Providers.class
-com/omis5/commonLLM/providers/GroqLLMProvider.class
-com/omis5/commonLLM/providers/LLMProviderFactory$1.class
+com/omis5/commonLLM/providers/LocalModelsProvider.class
+com/omis5/commonLLM/providers/LLMAPIProvider.class
+com/omis5/commonLLM/LLMFactory.class
 com/omis5/commonLLM/providers/GeminiLLMProvider.class
-com/omis5/commonLLM/providers/LLMProviderFactory.class
+com/omis5/commonLLM/LLMFactory$1.class
 com/omis5/commonLLM/GeminiLlmClient.class
+com/omis5/commonLLM/providers/LLMAPIProviderFactory.class
+com/omis5/commonLLM/providers/GroqLLMProvider.class
+com/omis5/commonLLM/providers/LLMAPIProviderFactory$1.class

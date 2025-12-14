@@ -4,14 +4,17 @@ import com.omis5.commonLLM.EnvConfig;
 
 import java.util.Map;
 
-public class GroqLLMProvider implements LLMProvider {
+public class GroqLLMProvider implements LLMAPIProvider {
 
     private final String apiKey = EnvConfig.get("GROQ_API_KEY");
     private final String apiUrl = EnvConfig.get("GROQ_API_URL");
 
     @Override
     public Map<String, String> getAvailableModels() {
-        // TODO: HTTP запрос к https://api.groq.com/openai/v1/models
+        String curl="curl -X GET \"https://api.groq.com/openai/v1/models\" \\\n" +
+                "     -H \"Authorization: Bearer"+ apiKey+"\" \\\n" +
+                "     -H \"Content-Type: application/json\"";
+
         return Map.of();
     }
 

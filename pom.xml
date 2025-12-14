@@ -44,6 +44,11 @@
                     <artifactId>common-llm</artifactId>
                     <version>${project.version}</version>
                 </dependency>
+                <dependency>
+                    <groupId>com.omis5</groupId>
+                    <artifactId>common-template</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
             </dependencies>
 
 
@@ -81,5 +86,8 @@
         <module>doc-generation-service</module>
         <module>user-service</module>
         <module>validation-service</module>
+        <module>common-template</module>
+        <module>file-storage-service</module>
+
     </modules>
 </project>
